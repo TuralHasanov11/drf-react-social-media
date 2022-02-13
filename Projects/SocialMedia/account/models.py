@@ -4,6 +4,7 @@ from django.conf import settings
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from friend.models import FriendList
+from rest_framework.authtoken.models import Token
 
 
 class AccounthManager(BaseUserManager):
@@ -40,24 +41,18 @@ class AccounthManager(BaseUserManager):
         return user
         
 
-def get_profile_image_filepath(self):
-    return f'profile_images/{self.pk}/{"profile_image.png"}'
-
-def get_default_profile_image():
-    return 'core_images/user.png'
-
-
 class Account(AbstractBaseUser):
     email = models.EmailField(verbose_name='email', unique=True)
-    username= models.CharField(max_length=30, unique=True)
+    username= models.CharField(max_length=50, unique=True)
     last_login = models.DateTimeField(blank=True, null=True)
     is_admin = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
-    # profile_image= models.ImageField(max_length=255, upload_to=get_profile_image_filepath, null=True, blank=True, default=get_default_profile_image)
+    profile_image= models.URLField(max_length=255, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    friend_list = models.OneToOneField(FriendList, null=True, blank=True, on_delete=models.SET_NULL, related_name='friend_list')
 
     objects = AccounthManager()
 
@@ -68,10 +63,6 @@ class Account(AbstractBaseUser):
     def __str__(self):
         return self.username
 
-    def get_profile_image_filename(self):
-        return str(self.profile_image)[str(self.profile_image).index(f'profile_images/{self.pk}/'):]
-
-
     def has_perm(self, perm, obj=None):
         return self.is_admin
 
@@ -81,7 +72,12 @@ class Account(AbstractBaseUser):
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def createFriendListReceiver(sender, instance, created=False, **kwargs):
-    FriendList.objects.get_or_create(user=instance)
+    if created:
+        FriendList.objects.get_or_create(user=instance)
     
 
+@receiver(post_save, sender=settings.AUTH_USER_MODEL)
+def createAuthToken(sender, instance=None, created=False, **kwargs):
+    if created:
+        Token.objects.create(user=instance)
 

@@ -8,6 +8,8 @@ class FriendList(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='user')
     friends = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, related_name='friends')
 
+    PER_PAGE = 50
+    
     def __str__(self):
         return self.user.username
 
@@ -17,13 +19,15 @@ class FriendList(models.Model):
 
     def removeFriend(self, account):
         if account in self.friends.all():
-            self.friends.remove(account)
+            self.friends.remove(account)    
+        return True
 
     def unfriend(self, removedAccount):
         friendsList = self # person unfriending
         friendsList.removeFriend(removedAccount)
         opponentFriendsList = FriendList.objects.get(user=removedAccount)
         opponentFriendsList.removeFriend(self.user)
+        return True
 
     def isMutualFriend(self, friend):
         if friend in self.friends.all():

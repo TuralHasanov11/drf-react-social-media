@@ -19,14 +19,15 @@ from account.models import Account
 from .pagination import AccountPagination
 from .serializers import RegistrationSerializer, ProfileSerializer, AccountSerializer
 
+
+@api_view(['POST'])
 @authentication_classes([])
 @permission_classes([])
-@api_view(['POST'])
 def register(request):
 
     serializer = RegistrationSerializer(data=request.data)
-
-    if serializer.is_valid():
+    
+    if serializer.is_valid(raise_exception=True):
         user = serializer.save()
         
         return Response({
@@ -35,7 +36,6 @@ def register(request):
             'token':Token.objects.get(user=user).key
         })
         
-    return Response(serializer.errors)
 
 
 @api_view(['GET'])
@@ -60,7 +60,7 @@ def profileUpdate(request):
     
     serializer = ProfileSerializer(user, data=request.data)
 
-    if serializer.is_valid():
+    if serializer.is_valid(raise_exception=True):
         serializer.save()
         
         return Response({'message':'Profile updated'})
@@ -74,7 +74,7 @@ class ObtainAuthTokenView(APIView):
     permission_classes = []
 
     def post(self, request):
-        email = request.POST.get('username')
+        email = request.POST.get('email')
         password = request.POST.get('password')
         user = authenticate(email=email, password=password)
 
@@ -108,11 +108,11 @@ def accountDetail(request, id):
 
     serializer = AccountSerializer(account)
     return Response(serializer.data)
+    
 
-
-# @method_decorator(login_required, name='dispatch')
-# @method_decorator(permission_required('inventory.view_equipment', raise_exception=True), name='dispatch')
 class AccountList(ListAPIView):
+    permission_classes=[]
+    authentication_classes=[]
     queryset = Account.objects.all()
     serializer_class = AccountSerializer
     pagination_class = AccountPagination

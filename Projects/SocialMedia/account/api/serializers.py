@@ -1,3 +1,4 @@
+from dataclasses import field
 from rest_framework import serializers
 from account.models import Account 
 
@@ -32,7 +33,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
 class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Account
-        fields = ['id', 'email', 'username', 'profile_image', 'last_login']
+        fields = ['username','profile_image']
     
     def clean_email(self):
         email = self.validated_data['email'].lower()
@@ -43,6 +44,16 @@ class ProfileSerializer(serializers.ModelSerializer):
             return email
 
         raise serializers.ValidationError(f'Email {email} is already in use')
+
+    def clean_username(self):
+        username = self.validated_data['username']
+
+        try:
+            account = Account.objects.get(username=username)
+        except Exception as e:
+            return username
+
+        raise serializers.ValidationError(f'Username {username} is already in use')
 
 
 class AccountSerializer(serializers.ModelSerializer):
